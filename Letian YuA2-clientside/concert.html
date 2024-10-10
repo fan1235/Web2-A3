@@ -1,0 +1,202 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+   <!-- Set the character encoding to UTF-8 -->
+    <meta charset="UTF-8">
+     <!-- Set viewport for responsive design -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Fundraisers</title>
+    <style>
+      /*  Basic styles for the page */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        /*  Header styles  */
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        /*  Navigation styles  */
+        nav {
+            margin: 20px;
+            text-align: center;
+        }
+        nav a {
+            margin: 0 15px;
+            text-decoration: none;
+            color: #333;
+            font-weight: bold;
+        }
+       /*Basic style of the main content area*/
+        .content {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        /* Form styles  */
+        form {
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+        }
+        input[type="text"], select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        /* Fundraiser list styles */
+        .fundraiser-list {
+            margin-top: 20px;
+        }
+        .fundraiser {
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        /*  Footer styles  */
+        footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 10px 0;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+      <!-- Main title for the page -->
+        <h1>Search Fundraisers</h1>
+    </header>
+
+    <nav>
+       <!-- Navigation links for the website -->
+        <a href="index.html">Home</a>
+        <a href="concert.html">Search Fundraisers</a>
+        <a href="add_concert.html">Fundraisers</a>
+    </nav>
+
+    <div class="content">
+      <!-- Subtitle for search section -->
+        <h2>Search for Fundraisers</h2>
+        <!-- Form for searching fundraisers -->
+        <form id="searchForm">
+            <label for="organizer">Organizer:</label>
+            <!-- Input for organizer name -->
+            <input type="text" id="organizer" name="organizer">
+
+            <label for="city">City:</label>
+            <!-- Input for city name -->
+            <input type="text" id="city" name="city">
+            <label for="category">Category:</label>
+           <!--  Select category dropdown menu -->
+            <select id="category" name="category">
+                <option value="">--Select Category--</option>
+                <option value="1">Poverty alleviation</option>
+                <option value="2">Provide disaster relief</option>
+                <option value="3">Retirement</option>
+            </select>
+            <!-- Buttons for searching and clearing inputs -->
+            <button type="button" id="searchButton">Search</button>
+            <button type="button" id="clearButton">Clear</button>
+        </form>
+            <!-- Container for displaying search results -->
+        <div id="fundraiser-list" class="fundraiser-list"></div>
+    </div>
+
+    <footer>
+        <!-- Contact information -->
+        <p>Contact us at: nonprofit@example.com | Phone: +123 456 7890</p>
+        <p>&copy; 2024 Non-Profit Organization. All rights reserved.</p>
+    </footer>
+
+    <script>
+       //Create links for three search buttons
+        document.getElementById("searchButton").addEventListener("click", function() {
+            const organizer = document.getElementById("organizer").value;    // Get organizer input
+            const city = document.getElementById("city").value;              // Get city input
+            const category = document.getElementById("category").value;      // Get selected category
+            
+            // Check if at least one search criterion is provided
+            if (!organizer && !city && !category) {
+                alert("Please select at least one search criterion.");
+                return;
+            }
+
+            // Fetch fundraisers based on user input
+            fetch(`http://localhost:3060/api/fundraiser/search?organizer=${organizer}&city=${city}&category=${category}`)
+                .then(response => response.json())
+                .then(data => {
+                    const fundraiserList = document.getElementById("fundraiser-list");
+                    fundraiserList.innerHTML = '';
+
+                     // If no data is returned, display an error message
+                    if (data.length === 0) {
+                        fundraiserList.innerHTML = '<p style="color: red; font-weight: bold;">No fundraisers found.</p>';
+                    } else {
+                       // Display the correct list of fundraisers
+                        data.forEach(fundraiser => {
+                            const fundraiserCard = document.createElement("div");
+                            fundraiserCard.classList.add("fundraiser");
+
+                            fundraiserCard.innerHTML = `
+                                <h3>${fundraiser.CAPTION}</h3>
+                                <p><strong>Organizer:</strong> ${fundraiser.ORGANIZER}</p>
+                                <p><strong>Target Funding:</strong> $${fundraiser.TARGET_FUNDING}</p>
+                                <p><strong>City:</strong> ${fundraiser.CITY}</p>
+                                <a href="fundraiser.html?id=${fundraiser.FUNDRAISER_ID}">View Details</a>
+                            `;
+                             // Add fundraiser card to the list
+                            fundraiserList.appendChild(fundraiserCard);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error("Error fetching fundraisers:", error);
+                });
+        });
+
+         //Click the clear button
+        document.getElementById("clearButton").addEventListener("click", function() {
+                 //Input a clear form
+            document.getElementById("organizer").value = "";
+            document.getElementById("city").value = "";
+            document.getElementById("category").value = "";
+        });
+    </script>
+
+</body>
+</html>
+
+
+
+
+
+
+

@@ -1,0 +1,141 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donate to Fundraiser</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .content {
+            padding: 20px;
+            max-width: 600px;
+            margin: 30px auto;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            text-align: center;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        input {
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Donate to Fundraiser</h1>
+</header>
+
+<div class="content">
+    <h2 id="fundraiser-name">Loading fundraiser...</h2>
+
+    
+    <form id="donation-form">
+        <label for="name">Your Name:</label>
+        <input type="text" id="name" required>
+
+        <label for="amount">Donation Amount (AUD):</label>
+        <input type="number" id="amount" required min="5" placeholder="Minimum donation is 5 AUD">
+
+        <button type="submit">Submit Donation</button>
+    </form>
+</div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const fundraiserID = urlParams.get('id');
+
+    // Fetch the fundraiser details
+    fetch(`http://localhost:3060/api/fundraiser/${fundraiserID}`)
+        .then(response => response.json())
+        .then(fundraiser => {
+            if (fundraiser.length > 0) {
+                document.getElementById('fundraiser-name').textContent = `Donate to ${fundraiser[0].CAPTION}`;
+            } else {
+                document.getElementById('fundraiser-name').textContent = 'Fundraiser not found';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching fundraiser details:', error);
+            document.getElementById('fundraiser-name').textContent = 'Error loading fundraiser';
+        });
+
+    // Handle donation form submission
+    document.getElementById('donation-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const donorName = document.getElementById('name').value;
+        const donationAmount = document.getElementById('amount').value;
+
+        // Validate donation amount (minimum 5 AUD)
+        if (donationAmount < 5) {
+            alert('The minimum donation amount is 5 AUD.');
+            return;
+        }
+
+        // Send donation data to server
+        fetch('http://localhost:3060/api/donation', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                donor_name: donorName,
+                amount: donationAmount,
+                fundraiser_id: fundraiserID
+            })
+        })
+        .then(response => {
+            if (response.ok) {
+                alert('Thank you for your donation!');
+                window.location.href = `fundraiser.html?id=${fundraiserID}`;
+            } else {
+                alert('Error processing your donation. Please try again.');
+            }
+        })
+        .catch(error => {
+            console.error('Error processing donation:', error);
+            alert('An error occurred. Please try again later.');
+        });
+    });
+</script>
+
+</body>
+</html> 
+
+
