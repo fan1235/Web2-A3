@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Fundraiser Management</title>
+    <style>
+ body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+header {
+    background-color: #4CAF50;
+    color: white;
+    padding: 20px;
+    text-align: center;
+    width: 100%;
+}
+
+.content {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+h1, h2 {
+    color: #333;
+    text-align: center;
+}
+
+.form-section, #form2 {
+    background-color: white;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    width: 100%;
+    max-width: 600px;
+}
+
+form {
+    display: grid;
+    gap: 10px;
+}
+
+input[type="text"], select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+input[type="submit"] {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+input[type="submit"]:hover {
+    background-color: #45a049;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: white;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #4CAF50;
+    color: white;
+}
+
+tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+.btn {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.btn:hover {
+    background-color: #d32f2f;
+}
+
+footer {
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 10px 0;
+    margin-top: 20px;
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .content {
+        padding: 10px;
+    }
+    
+    .form-section, #form2 {
+        padding: 15px;
+    }
+}
+
+    </style>
+
+    <script>
+        const apiUrl = 'http://localhost:3060/api/fundraiser';
+
+        // Load all fundraisers
+        async function loadFundraisers() {
+            try {
+                const response = await fetch(apiUrl + "/active");
+                const fundraisers = await response.json();
+                const tableBody = document.getElementById('fundraiser-list');
+                tableBody.innerHTML = '';
+
+                fundraisers.forEach(fundraiser => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                    <td>${fundraiser.FUNDRAISER_ID}</td>
+                    <td>${fundraiser.CAPTION}</td>
+                    <td>${fundraiser.ORGANIZER}</td>
+                    <td>${fundraiser.CITY}</td>
+                    <td>${fundraiser.TARGET_FUNDING} AUD</td>
+                    <td>${fundraiser.ACTIVE ? "Active" : "Inactive"}</td>
+                    <td>
+                        <button class="btn" onclick="deleteByID(${fundraiser.FUNDRAISER_ID})">Delete</button>
+                    </td>
+                `;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error loading fundraisers:', error);
+            }
+        }
+
+        async function loadDonations(fundraiserId) {
+            try {
+                const response = await fetch(`${apiUrl}/${fundraiserId}/donations`);
+                const donations = await response.json();
+                const donationList = document.getElementById('donation-list');
+                donationList.innerHTML = '';
+
+                donations.forEach(donation => {
+                    const item = document.createElement('li');
+                    item.textContent = `Donor: ${donation.DONOR_NAME}, Amount: ${donation.AMOUNT} AUD`;
+                    donationList.appendChild(item);
+                });
+            } catch (error) {
+                console.error('Error loading donations:', error);
+            }
+        }
+
+
+
+        function validateForm1() {
+            // Get values from the form using DOM
+            const ORGANIZER = document.getElementById('organizer').value.trim();
+            const CAPTION = document.getElementById('caption').value.trim();
+            const TARGET = document.getElementById('target').value;
+            const CURRENT = document.getElementById('current').value;
+            const CITY = document.getElementById('city').value.trim();
+            const ACTIVE = document.getElementById('active').value;
+            const CATEGORY_ID = document.getElementById('category').value;
+
+            // Validate the form. Assume, all fields are required
+            if (!ORGANIZER || !CAPTION || !TARGET || !CURRENT || !CITY || !ACTIVE || !CATEGORY_ID) {
+                alert("All fields are required!");
+                return;
+            }
+
+            // Create a data (JSON) to send in the POST request
+            const postData = {
+                'ORGANIZER': ORGANIZER,
+                'CAPTION': CAPTION,
+                'TARGET_FUNDING': TARGET,
+                'CURRENT_FUNDING': CURRENT,
+                'CITY': CITY,
+                'ACTIVE': ACTIVE,
+                'CATEGORY_ID': CATEGORY_ID
+            };
+
+            // Send the POST request to NodeJS API server
+            fetch('http://localhost:3060/api/fundraiser/fundraiser', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(postData)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.insert === 'success') {
+                        alert("Fundraiser added successfully!");
+                        document.getElementById('form1').reset(); // to clear the form                    
+                    } else if (data.insert === 'error') {
+                        alert("Error: " + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                });
+        }
+
+        function validateForm2() {
+            // Get values from the form using DOM
+            const FUNDRAISER_ID = document.getElementById('fundraiser-id').value.trim();
+            const ORGANIZER = document.getElementById('organizer-update').value.trim();
+            const CAPTION = document.getElementById('caption-update').value.trim();
+            const TARGET = document.getElementById('target-update').value.trim();
+            const CURRENT = document.getElementById('current-update').value.trim(); // Fixed typo
+            const CITY = document.getElementById('city-update').value.trim();
+            const ACTIVE = document.getElementById('active-update').value;
+            const CATEGORY_ID = document.getElementById('category-update').value; // Fixed id
+
+            // Validate the form. Assume all fields are required
+            if (!FUNDRAISER_ID || !ORGANIZER || !CAPTION || !TARGET || !CURRENT || !CITY || !ACTIVE || !CATEGORY_ID) {
+                alert("All fields are required!");
+                return;
+            }
+
+            // Create a data (JSON) to send in the request
+            const postData = {
+                'FUNDRAISER_ID': FUNDRAISER_ID,
+                'ORGANIZER': ORGANIZER,
+                'CAPTION': CAPTION,
+                'TARGET_FUNDING': TARGET,
+                'CURRENT_FUNDING': CURRENT,
+                'CITY': CITY,
+                'ACTIVE': ACTIVE,
+                'CATEGORY_ID': CATEGORY_ID
+            };
+
+            // Update existing fundraiser
+            fetch(`http://localhost:3060/api/fundraiser/fundraiser/${FUNDRAISER_ID}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(postData)
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.insert === 'success') {
+                        alert("Fundraiser updated successfully!");
+                        document.getElementById('form2').reset(); // to clear the form
+                        loadFundraisers(); // Refresh the fundraiser list
+                    } else {
+                        alert("Error: " + (data.message || "Unknown error occurred"));
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    alert("An error occurred while updating the fundraiser. Please try again.");
+                });
+        }
+
+        function deleteByID(id){
+            // Send DELETE request to API
+            fetch('http://localhost:3060/api/fundraiser/fundraiser/'+id, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+              alert(data.delete);
+                if (data.delete === 'success') {
+                    alert("Fundraiser deleted successfully!");
+                } else if (data.delete === 'error') {
+                    alert("Error: " + data.message);
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+            });
+        }
+    
+
+
+
+        // Load fundraisers when the page is ready
+        window.onload = loadFundraisers;
+    </script>
+</head>
+
+<body>
+    <h1>Admin - Fundraiser Management</h1>
+
+    <!-- Form to Add New Fundraiser -->
+    <section class="form-section">
+        <h2>Add Fundraiser</h2>
+        <form id="form1" onsubmit="return(false);">
+            <label>Organizer</label>
+            <input type="text" id="organizer" placeholder="Enter organizer" required><br>
+
+            <label>Caption</label>
+            <input type="text" id="caption" placeholder="Enter caption" required><br>
+
+            <label>Target funding</label>
+            <input type="text" id="target" placeholder="Enter target funding" required><br>
+
+            <label>Current funding</label>
+            <input type="text" id="current" placeholder="Enter current funding" required><br>
+
+            <label>City</label>
+            <input type="text" id="city" placeholder="Enter city" required><br>
+
+            Active:
+            <select id="active" required>
+                <option value="0">Inactive</option>
+                <option value="1">Active</option>
+            </select><br>
+
+            Category:
+            <select id="category" required>
+                <option value="1">Poverty alleviation</option>
+                <option value="2">Provide disaster relief</option>
+                <option value="3">Retirement</option>
+                <option value="4">Environmental protection</option>
+                <option value="5">University Grants Fund</option>
+                <option value="6">Unemployment assistance</option>
+                <option value="7">Children foundation</option>
+                <option value="8">Animal Protection</option>
+            </select>
+
+            <input type="submit" onclick="validateForm1()" value="Save">
+        </form>
+    </section>
+
+    <!-- Form to Update Fundraiser -->
+    <form id="form2" onsubmit="return(false);">
+        <h2>Update Fundraiser</h2>
+        <label>ID</label>
+        <input type="text" id="fundraiser-id" placeholder="Enter id" required>
+        <label>Organizer</label>
+        <input type="text" id="organizer-update" placeholder="Enter organizer" required><br>
+
+        <label>Caption</label>
+        <input type="text" id="caption-update" placeholder="Enter caption" required><br>
+
+        <label>Target funding</label>
+        <input type="text" id="target-update" placeholder="Enter target funding" required><br>
+
+        <label>Current funding</label>
+        <input type="text" id="current-update" placeholder="Enter current funding" required><br>
+
+        <label>City</label>
+        <input type="text" id="city-update" placeholder="Enter city" required><br>
+
+        Active:
+        <select id="active-update" required>
+            <option value="0">Inactive</option>
+            <option value="1">Active</option>
+        </select><br>
+
+        Category:
+        <select id="category-update" required>
+            <option value="1">Poverty alleviation</option>
+            <option value="2">Provide disaster relief</option>
+            <option value="3">Retirement</option>
+            <option value="4">Environmental protection</option>
+            <option value="5">University Grants Fund</option>
+            <option value="6">Unemployment assistance</option>
+            <option value="7">Children foundation</option>
+            <option value="8">Animal Protection</option>
+        </select>
+
+        <input type="submit" onclick="validateForm2()" value="Update">
+    </form>
+
+    <h2>Fundraisers List</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Caption</th>
+                <th>Organizer</th>
+                <th>City</th>
+                <th>Target Funding</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="fundraiser-list"></tbody>
+    </table>
+</body>
+
+</html>

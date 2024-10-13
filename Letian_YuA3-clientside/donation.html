@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donate to Fundraiser</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .content {
+            padding: 20px;
+            max-width: 600px;
+            margin: 30px auto;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        h1,
+        h2 {
+            text-align: center;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        input {
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #fundraiser-details {
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #e9f5e9;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>Donate to Fundraiser</h1>
+    </header>
+
+    <div class="content">
+        <div id="fundraiser-details"></div>
+
+
+        <form id="donation-form" onsubmit="return(false);">
+            <label>Your Name:</label>
+            <input type="text" id="name" placeholder="Enter name" required><br>
+
+            <label>Donation Amount (AUD):</label>
+            <input type="text" id="amount" placeholder="Enter amount" required><br>
+
+            <label>Date:</label>
+            <input type="date" id="date" placeholder="Enter date" required><br>
+
+            <input type="submit" onclick="validateForm()" value="Save">
+
+        </form>
+
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const fundraiserID = urlParams.get('id');
+        var id;
+
+        fetch(`http://localhost:3060/api/fundraiser/fundraiser/${fundraiserID}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.length === 0) {
+                    document.getElementById('fundraiser-details').innerHTML = '<h2 style="color: red;">Fundraiser not found.</h2>';
+                } else {
+                    const fundraiser = data[0];
+                    id = fundraiser;
+                    console.log(fundraiser.CAPTION);
+                    document.getElementById('fundraiser-details').innerHTML = `
+                            <h2>${fundraiser.CAPTION}</h2>
+                            <p><strong>Organizer:</strong> ${fundraiser.ORGANIZER}</p>
+                            <p><strong>Target Funding:</strong> $${fundraiser.TARGET_FUNDING}</p>
+                            <p><strong>Current Funding:</strong> $${fundraiser.CURRENT_FUNDING}</p>
+                            <p><strong>City:</strong> ${fundraiser.CITY}</p>
+                            <p><strong>Category:</strong> ${fundraiser.CATEGORY_NAME}</p>
+                            <p><strong>Status:</strong> ${fundraiser.ACTIVE ? 'Active' : 'Inactive'}</p>
+                        `;
+                    const dataDiv = document.getElementById('donations-list');
+
+
+
+                }
+
+
+            })
+            .catch(error => {
+                console.error("Error fetching fundraiser details:", error);
+                document.getElementById('fundraiser-details').innerHTML = '<h2 style="color: red;">Error retrieving fundraiser details.</h2>';
+            });
+
+
+
+        function validateForm() {
+
+            // Get values from the form using DOM
+            const Name = document.getElementById('name').value.trim();
+            const Amount = document.getElementById('amount').value.trim();
+            const Date = document.getElementById('date').value.trim();
+            const ID = id.FUNDRAISER_ID;
+
+
+            // Validate the form. Assume, all fields are required
+            if (!Name || !Amount || !Date) {
+                alert("All fields are required!");
+                return;
+            }
+
+            if (Amount < 5) {
+                alert('The minimum donation amount is 5 AUD.');
+                return;
+            }
+
+            // Create a data (JSON) to send in the POST request
+            const postData = { 'DATE': Date, 'AMOUNT': Amount, 'GIVER': Name, 'FUNDRAISER_ID': ID };
+            //alert(JSON.stringify(postData));
+
+            // Send the POST request to NodeJS API server
+            fetch('http://localhost:3060/api/fundraiser/donation', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(postData)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.insert === 'success') {
+                        alert("Donation added successfully!");
+                        document.getElementById('donation-form').reset(); // to clear the form
+                        // window.location.href = 'thank-you.html?id=' + fundraiserID;
+                    } else if (data.insert === 'error') {
+                        alert("Error: " + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                });
+        }
+
+
+    </script>
+
+</body>
+
+</html>
